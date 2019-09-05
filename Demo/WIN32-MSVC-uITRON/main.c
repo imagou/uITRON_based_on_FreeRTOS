@@ -46,10 +46,10 @@ static MESSAGE_ENTITY* GetUserMessage(void) {
 #define CREATE_TASK(name, func) {   \
     T_CTSK ctsk_;    \
     ctsk_.tskatr = #name;   \
-    ctsk_.task = func;   \
-    ctsk_.itskpri = TASK_PRI(name); \
-    ctsk_.stk = TASK_STACK(name);   \
-    ctsk_.depth = TASK_STACK_DEPTH(name);   \
+    ctsk_.task = func;                      /* タスク関数 */ \
+    ctsk_.itskpri = TASK_PRI(name);         /* タスクの優先度 */   \
+    ctsk_.stk = TASK_STACK(name);           /* タスクスタック（静的に確保しておく必要あり） */    \
+    ctsk_.depth = TASK_STACK_DEPTH(name);   /* タスクスタックサイズ（本シュミレータ独自実装） */   \
     cre_tsk(TASK_ID(name), &ctsk_); \
 }
 
