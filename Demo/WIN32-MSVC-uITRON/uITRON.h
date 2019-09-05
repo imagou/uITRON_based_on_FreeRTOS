@@ -1,7 +1,10 @@
 /*--------------------------------------------------------------------------*/
 /*  Common                                                                  */
 /*--------------------------------------------------------------------------*/
-typedef int     ID;
+typedef int         ID;
+typedef const char* ATR;
+typedef void        (*FP)(void*);
+typedef int         RELTIM;
 typedef enum {
     E_OK = 0,
     E_ID,
@@ -17,8 +20,6 @@ typedef enum {
 #define TASK_STACK_DEPTH(x) (sizeof(TASK_STACK(x)) / sizeof(TASK_STACK(x)[0]))
 typedef StackType_t     STACK_TYPE;
 /* Create */
-typedef const char*     ATR;
-typedef void (*FP)(void*);
 typedef int             PRI;
 typedef StackType_t*    VP;
 typedef struct {
@@ -31,7 +32,6 @@ typedef struct {
 } T_CTSK;
 ER cre_tsk(ID, T_CTSK*);
 /* Delay */
-typedef int RELTIM;
 ER dly_tsk(RELTIM);
 /* Suspend/Resume */
 ER sus_tsk(ID);
@@ -50,6 +50,7 @@ typedef struct {
 ER cre_flg(ID, T_CFLG*);
 /* Set */
 ER set_flg(ID, FLGPTN);
+ER iset_flg(ID, FLGPTN);
 typedef enum {
     TWF_ANDW = 0,
     TWF_ORW = 1,
@@ -73,3 +74,26 @@ typedef struct {
 } T_MSG;
 ER snd_mbx(ID, T_MSG*);
 ER rcv_mbx(ID, T_MSG**);
+
+/*--------------------------------------------------------------------------*/
+/*  Cyclic Handler                                                          */
+/*--------------------------------------------------------------------------*/
+/* Common */
+#define CYCLIC_ID(x)        CYCLIC_ID_ ## x
+/* Create */
+typedef struct {
+    ATR     cycatr;
+    FP      cychdr;
+    RELTIM  cyctim;
+} T_CCYC;
+ER cre_cyc(ID, T_CCYC*);
+/* Start */
+ER sta_cyc(ID);
+/* Stop */
+ER stp_cyc(ID);
+/* Refer */
+typedef int     STAT;
+typedef struct {
+    STAT    cycstat;
+} T_RCYC;
+ER ref_cyc(ID, T_RCYC*);

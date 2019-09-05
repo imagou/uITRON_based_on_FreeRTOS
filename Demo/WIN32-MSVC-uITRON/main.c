@@ -36,8 +36,9 @@ static MESSAGE_ENTITY* GetUserMessage(void) {
 /* 解放はまだ用意していない */
 
 /*--- Event ---*/
-#define EVENT_ALL       (0x00FFFFFF)    /* 最大で24-bit */
-/* Reserved bit0 - bit15 */
+#define EVENT_ALL       (0x00FFFFFF)    /* FreeRTOS仕様制限で、最大で24-bit */
+#define EVENT_CYCLIC    (0x00000001)
+/* Reserved bit1 - bit15 */
 #define EVENT_STOP      (0x00010000)
 #define EVENT_RESTART   (0x00020000)
 
@@ -55,10 +56,13 @@ static MESSAGE_ENTITY* GetUserMessage(void) {
 /*--------------------------------------------------------------------------*/
 /*  Prototypes                                                              */
 /*--------------------------------------------------------------------------*/
-static void SendTask(void *);
-static void RecvTask(void *);
+/* Tasks */
+static void SendTask(void*);
+static void RecvTask(void*);
 static void TimerTask(void*);
-static void CommandTask(void *);
+static void CommandTask(void*);
+/* Handlers */
+static void UserCyclicHandler(void*);
 
 /*--------------------------------------------------------------------------*/
 /*  Static Functions                                                        */
@@ -71,6 +75,11 @@ static ER CreateOsResources(void)
 
     T_CMBX cmbx;
     cre_mbx(MAILBOX_ID(RECV), &cmbx);
+
+    T_CCYC ccyc;
+    ccyc.cychdr = UserCyclicHandler;
+    ccyc.cyctim = 1000;
+    cre_cyc(CYCLIC_ID(USER), &ccyc);
 
     return E_OK;
 }
@@ -94,6 +103,7 @@ static void PrintUsage()
     DEBUG_PRINT("   1 - 15の数値    :   数値メッセージの送受信");
     DEBUG_PRINT("   stop            :   受信タスクの一時停止");
     DEBUG_PRINT("   start           :   受信タスクの再開");
+    DEBUG_PRINT("   cyclic          :   周期ハンドラの開始/停止（初期状態は停止）");
     DEBUG_PRINT("   exit            :   デモの終了");
     DEBUG_PRINT("   help            :   このメッセージを表示");
     DEBUG_PRINT("");
@@ -141,6 +151,13 @@ static void SendTask(void* params)
             continue;
         }
 
+        /* Cyclic Event */
+        if (flgptn & EVENT_CYCLIC) {
+            static int32_t expired = 0;
+            DEBUG_PRINT("[%s]: Cyclic Timer Expired (%d)", __func__, ++expired);
+            continue;
+        }
+
         MESSAGE_ENTITY* ent;
         ent = GetUserMessage();
         /* Numeric Event */
@@ -174,7 +191,7 @@ static void TimerTask(void *params)
     (void)params;
 
     while (1) {
-        RELTIM tim = 1000;
+        RELTIM tim = 3000;
         DEBUG_PRINT("[%s]: DELAY %dms", __func__, tim);
         dly_tsk(tim);
     }
@@ -208,6 +225,13 @@ static void CommandTask(void* params)
         else if (EQUALS_(start)) {
             set_flg(FLAG_ID(SEND), EVENT_RESTART);
         }
+        /* Cyclic */
+        else if (EQUALS_(cyclic)) {
+            T_RCYC rcyc;
+            ref_cyc(CYCLIC_ID(USER), &rcyc);
+            if (!(rcyc.cycstat))    sta_cyc(CYCLIC_ID(USER));
+            else                    stp_cyc(CYCLIC_ID(USER));
+        }
         /* Print Usage */
         else if (EQUALS_(help)) {
             sus_tsk(TASK_ID(TIMER));
@@ -221,4 +245,16 @@ static void CommandTask(void* params)
         }
 #undef EQUALS_
     }
+}
+
+/*--------------------------------------------------------------------------*/
+/*  Handlers                                                                */
+/*--------------------------------------------------------------------------*/
+
+static void UserCyclicHandler(void* params)
+{
+    /* Just to remove compiler warning. */
+    (void)params;
+
+    iset_flg(FLAG_ID(SEND), EVENT_CYCLIC);
 }

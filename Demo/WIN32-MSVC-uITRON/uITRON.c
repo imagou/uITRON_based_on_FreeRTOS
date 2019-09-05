@@ -4,6 +4,7 @@
 #include "FreeRTOS.h"
 #include "event_groups.h"
 #include "queue.h"
+#include "timers.h"
 
 #include "uITRON.h"
 
@@ -18,6 +19,7 @@
 #define CHECK_ID_TASK_(id)      CHECK_ID_(TASK, id)
 #define CHECK_ID_FLAG_(id)      CHECK_ID_(FLAG, id)
 #define CHECK_ID_MAILBOX_(id)   CHECK_ID_(MAILBOX, id)
+#define CHECK_ID_CYCLIC_(id)    CHECK_ID_(CYCLIC, id)
 /* Mail Box */
 #define QUEUE_LENGTH    10
 #define ITEM_SIZE       sizeof(void*)
@@ -35,7 +37,11 @@ static StaticEventGroup_t   g_FlagGroups[FLAG_ID_MAX];
 /* Mail Box */
 static QueueHandle_t        g_MailBoxHandles[MAILBOX_ID_MAX];
 static StaticQueue_t        g_MailBoxQueues[MAILBOX_ID_MAX];
-static uint8_t              g_QueueStorageArea[MAILBOX_ID_MAX][QUEUE_LENGTH * ITEM_SIZE];
+static uint8_t              g_MailBoxQueueStorageArea[MAILBOX_ID_MAX][QUEUE_LENGTH * ITEM_SIZE];
+/* Cyclic Handler */
+static TimerHandle_t        g_CyclicHandles[CYCLIC_ID_MAX];
+static FP                   g_CyclicFunctions[CYCLIC_ID_MAX];
+static StaticTimer_t        g_CyclicBuffers[CYCLIC_ID_MAX];
 
 /*--------------------------------------------------------------------------*/
 /*  APIs                                                                    */
@@ -82,9 +88,16 @@ ER cre_flg(ID flgid, T_CFLG* pk_cflg)
 
 ER set_flg(ID flgid, FLGPTN setptn)
 {
-    if ((flgid < 0) || (FLAG_ID_MAX <= flgid)) return E_ID;
-
+    CHECK_ID_FLAG_(flgid);
     xEventGroupSetBits(g_FlagHandles[flgid], setptn);
+    return E_OK;
+}
+
+ER iset_flg(ID flgid, FLGPTN setptn)
+{
+    CHECK_ID_FLAG_(flgid);
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    xEventGroupSetBitsFromISR(g_FlagHandles[flgid], setptn, &xHigherPriorityTaskWoken);
     return E_OK;
 }
 
@@ -106,7 +119,7 @@ ER cre_mbx(ID mbxid, T_CMBX* pk_cmbx)
     /* void*型をQUEUE_LENGTHだけキューイング可能 */
     g_MailBoxHandles[mbxid] = xQueueCreateStatic(QUEUE_LENGTH,
         ITEM_SIZE,
-        g_QueueStorageArea[mbxid],
+        g_MailBoxQueueStorageArea[mbxid],
         &(g_MailBoxQueues[mbxid]));
 
     return E_OK;
@@ -131,5 +144,46 @@ ER rcv_mbx(ID mbxid, T_MSG** ppk_msg)
     xQueueReceive(g_MailBoxHandles[0], &(pxRxedMessage), portMAX_DELAY);
     *ppk_msg = pxRxedMessage;
 
+    return E_OK;
+}
+
+void vTimerCallback(TimerHandle_t xTimer)
+{
+    for (int i = 0; i < CYCLIC_ID_MAX; i++) {
+        if (xTimer == g_CyclicHandles[i]) {
+            g_CyclicFunctions[i](NULL);
+            break;
+        }
+    }
+}
+
+ER cre_cyc(ID cycid, T_CCYC* pk_ccyc)
+{
+    CHECK_ID_CYCLIC_(cycid);
+    g_CyclicFunctions[cycid] = pk_ccyc->cychdr;
+    g_CyclicHandles[cycid] = xTimerCreateStatic(pk_ccyc->cycatr,
+        pk_ccyc->cyctim, pdTRUE, (void*)0, vTimerCallback, &(g_CyclicBuffers[cycid]));
+
+    return E_OK;
+}
+
+ER sta_cyc(ID cycid)
+{
+    CHECK_ID_CYCLIC_(cycid);
+    xTimerStart(g_CyclicHandles[cycid], 0);
+    return E_OK;
+}
+
+ER stp_cyc(ID cycid)
+{
+    CHECK_ID_CYCLIC_(cycid);
+    xTimerStop(g_CyclicHandles[cycid], 0);
+    return E_OK;
+}
+
+ER ref_cyc(ID cycid, T_RCYC* pk_rcyc)
+{
+    CHECK_ID_CYCLIC_(cycid);
+    pk_rcyc->cycstat = (STAT)(xTimerIsTimerActive(g_CyclicHandles[cycid]));
     return E_OK;
 }
