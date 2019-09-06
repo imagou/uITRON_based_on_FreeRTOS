@@ -7,8 +7,7 @@
 #include "timers.h"
 
 #include "uITRON.h"
-
-#define __GLOBAL_DEFINITION_USER_DEFINITIONS__
+/* XXX_ID_MAXを参照するためだけにinclude */
 #include "UserDefinitions.h"
 
 /*--------------------------------------------------------------------------*/
@@ -28,9 +27,9 @@
 /*  Global Variables                                                        */
 /*--------------------------------------------------------------------------*/
 /* Task */
-static TaskHandle_t g_TaskHandles[TASK_ID_MAX];
+static TaskHandle_t         g_TaskHandles[TASK_ID_MAX];
 /* Task Controll Block */
-static StaticTask_t g_TCBs[TASK_ID_MAX];
+static StaticTask_t         g_TCBs[TASK_ID_MAX];
 /* Event Flag */
 static EventGroupHandle_t   g_FlagHandles[FLAG_ID_MAX];
 static StaticEventGroup_t   g_FlagGroups[FLAG_ID_MAX];
@@ -49,10 +48,26 @@ static StaticTimer_t        g_CyclicBuffers[CYCLIC_ID_MAX];
 
 ER cre_tsk(ID tskid, T_CTSK* pk_ctsk)
 {
-    if ((tskid < 0) || (TASK_ID_MAX <= tskid)) return E_ID;
+    CHECK_ID_TASK_(tskid);
 
     g_TaskHandles[tskid] = xTaskCreateStatic(
-        pk_ctsk->task, pk_ctsk->tskatr, pk_ctsk->depth, NULL, pk_ctsk->itskpri, pk_ctsk->stk, &(g_TCBs[tskid]));
+        pk_ctsk->task, "Task",
+        /* ここはStackType_t型配列の要素数を期待している */
+        /* 対して、stkszはバイト数を指定しているので、sizeof(SizeType_t)で除算する */
+        (pk_ctsk->stksz / sizeof(StackType_t)),
+        NULL, pk_ctsk->itskpri, pk_ctsk->stk, &(g_TCBs[tskid]));
+    /* もしTA_ACTが指定されていなかったらSUSPENDEDとする */
+    /* FreeRTOSにはWAITINGの概念がなさそう・・・ */
+    if (!((pk_ctsk->tskatr) & TA_ACT)) vTaskSuspend(g_TaskHandles[tskid]);
+    return E_OK;
+}
+
+ER sta_tsk(ID tskid, VP_INT stacd)
+{
+    CHECK_ID_TASK_(tskid);
+    (void)stacd;
+    /* Resumeと同じ */
+    rsm_tsk(tskid);
     return E_OK;
 }
 
@@ -79,8 +94,7 @@ ER rsm_tsk(ID tskid)
 
 ER cre_flg(ID flgid, T_CFLG* pk_cflg)
 {
-    if ((flgid < 0) || (FLAG_ID_MAX <= flgid)) return E_ID;
-
+    CHECK_ID_FLAG_(flgid);
     (void)pk_cflg;
     g_FlagHandles[flgid] = xEventGroupCreateStatic(&(g_FlagGroups[flgid]));
     return E_OK;
@@ -103,8 +117,7 @@ ER iset_flg(ID flgid, FLGPTN setptn)
 
 ER wai_flg(ID flgid, FLGPTN waiptn, MODE wfmode, FLGPTN* p_flgptn)
 {
-    if ((flgid < 0) || (FLAG_ID_MAX <= flgid)) return E_ID;
-
+    CHECK_ID_FLAG_(flgid);
     *p_flgptn = xEventGroupWaitBits(g_FlagHandles[flgid], waiptn,
         pdTRUE,     /* Clear Bits */
         (const BaseType_t)(wfmode == TWF_ANDW), portMAX_DELAY);
@@ -161,7 +174,7 @@ ER cre_cyc(ID cycid, T_CCYC* pk_ccyc)
 {
     CHECK_ID_CYCLIC_(cycid);
     g_CyclicFunctions[cycid] = pk_ccyc->cychdr;
-    g_CyclicHandles[cycid] = xTimerCreateStatic(pk_ccyc->cycatr,
+    g_CyclicHandles[cycid] = xTimerCreateStatic("Cyclic",
         pk_ccyc->cyctim, pdTRUE, (void*)0, vTimerCallback, &(g_CyclicBuffers[cycid]));
 
     return E_OK;

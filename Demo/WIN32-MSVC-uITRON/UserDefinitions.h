@@ -12,6 +12,7 @@
 /*  Tasks                                                                   */
 /*--------------------------------------------------------------------------*/
 /* Task ID */
+#define TASK_ID(x)      TASK_ID_ ## x
 enum {
     TASK_ID(SEND),
     TASK_ID(RECV),
@@ -25,27 +26,30 @@ enum {
 };
 
 /* Task Priority */
+#define TASK_PRI(x)     TASK_PRI_ ## x
 #define TASK_PRI_HIGH   (7)     // See configMAX_PRIORITIES
 #define TASK_PRI_MIDDLE (5)
 #define TASK_PRI_LOW    (3)
 enum {
-    TASK_PRI(SEND)      = TASK_PRI_MIDDLE,
+    TASK_PRI(SEND)      = TASK_PRI_HIGH,
     TASK_PRI(RECV)      = TASK_PRI_MIDDLE,
-    TASK_PRI(TIMER)     = TASK_PRI_HIGH,
+    TASK_PRI(TIMER)     = TASK_PRI_LOW,
     TASK_PRI(COMMAND)   = TASK_PRI_LOW,
 };
 
 /* Task Stack */
-EXTERN STACK_TYPE   TASK_STACK(SEND)[1024];
-EXTERN STACK_TYPE   TASK_STACK(RECV)[1024];
-EXTERN STACK_TYPE   TASK_STACK(TIMER)[512];
-EXTERN STACK_TYPE   TASK_STACK(COMMAND)[1024];
+#define TASK_STACK(x)   G_TaskStack_ ## x
+EXTERN unsigned char    TASK_STACK(SEND)[1024];
+EXTERN unsigned char    TASK_STACK(RECV)[1024];
+EXTERN unsigned char    TASK_STACK(TIMER)[512];
+EXTERN unsigned char    TASK_STACK(COMMAND)[1024];
 
 /*--------------------------------------------------------------------------*/
 /*  Resources                                                               */
 /*--------------------------------------------------------------------------*/
 /*--- Event Flag ---*/
 /* Flag ID */
+#define FLAG_ID(x)      FLAG_ID_ ## x
 enum {
     FLAG_ID(SEND),
 
@@ -54,6 +58,8 @@ enum {
 };
 
 /*--- Mail Box ---*/
+/* Common */
+#define MAILBOX_ID(x)   MAILBOX_ID_ ## x
 /* Mail Box ID */
 enum {
     MAILBOX_ID(RECV),
@@ -63,6 +69,8 @@ enum {
 };
 
 /*--- Cyclic Handler ---*/
+/* Common */
+#define CYCLIC_ID(x)    CYCLIC_ID_ ## x
 /* Cyclic ID */
 enum {
     CYCLIC_ID(USER),

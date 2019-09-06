@@ -1,36 +1,39 @@
 /*--------------------------------------------------------------------------*/
 /*  Common                                                                  */
 /*--------------------------------------------------------------------------*/
-typedef int         ID;
-typedef const char* ATR;
-typedef void        (*FP)(void*);
-typedef int         RELTIM;
+/* Other */
+typedef int             ID;
+typedef unsigned int    ATR;
+typedef void*           VP_INT;
+typedef void            (*FP)(void*);
+typedef int             RELTIM;
 typedef enum {
     E_OK = 0,
     E_ID,
 } ER;
+#define TA_NULL         (0x00)
+#define TA_HLNG         (0x00)
+#define TA_ACT          (0x02)
 
 /*--------------------------------------------------------------------------*/
 /*  Task                                                                    */
 /*--------------------------------------------------------------------------*/
-/* Common */
-#define TASK_ID(x)          TASK_ID_ ## x
-#define TASK_PRI(x)         TASK_PRI_ ## x
-#define TASK_STACK(x)       G_TaskStack_ ## x
-#define TASK_STACK_DEPTH(x) (sizeof(TASK_STACK(x)) / sizeof(TASK_STACK(x)[0]))
-typedef StackType_t     STACK_TYPE;
 /* Create */
-typedef int             PRI;
-typedef StackType_t*    VP;
+typedef int     PRI;
+#undef SIZE
+#define SIZE    unsigned int
+typedef void*   VP;
 typedef struct {
     ATR         tskatr;
+    VP_INT      exinf;
     FP          task;
     PRI         itskpri;
+    SIZE        stksz;
     VP          stk;
-/* “ÆŽ©‚Ì’l */
-    uint32_t    depth;
 } T_CTSK;
 ER cre_tsk(ID, T_CTSK*);
+/* Start */
+ER sta_tsk(ID, VP_INT);
 /* Delay */
 ER dly_tsk(RELTIM);
 /* Suspend/Resume */
@@ -40,10 +43,8 @@ ER rsm_tsk(ID);
 /*--------------------------------------------------------------------------*/
 /*  Event Flag                                                              */
 /*--------------------------------------------------------------------------*/
-/* Common */
-#define FLAG_ID(x)      FLAG_ID_ ## x
 /* Create */
-typedef uint32_t    FLGPTN;
+typedef unsigned int    FLGPTN;
 typedef struct {
     FLGPTN  iflgptn;
 } T_CFLG;
@@ -61,8 +62,6 @@ ER wai_flg(ID, FLGPTN, MODE, FLGPTN*);
 /*--------------------------------------------------------------------------*/
 /*  Mail Box                                                                */
 /*--------------------------------------------------------------------------*/
-/* Common */
-#define MAILBOX_ID(x)       MAILBOX_ID_ ## x
 /* Create */
 typedef struct {
     ATR mbxatr;
@@ -78,8 +77,6 @@ ER rcv_mbx(ID, T_MSG**);
 /*--------------------------------------------------------------------------*/
 /*  Cyclic Handler                                                          */
 /*--------------------------------------------------------------------------*/
-/* Common */
-#define CYCLIC_ID(x)        CYCLIC_ID_ ## x
 /* Create */
 typedef struct {
     ATR     cycatr;
