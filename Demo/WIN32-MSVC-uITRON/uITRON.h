@@ -14,6 +14,11 @@ typedef enum {
 #define TA_NULL         (0x00)
 #define TA_HLNG         (0x00)
 #define TA_ACT          (0x02)
+#define TA_TFIFO        (0x00)
+#define TA_TPRI         (0x01)
+#define TA_WSGL         (0x00)
+#define TA_WMUL         (0x02)
+#define TA_CLR          (0x04)
 
 /*--------------------------------------------------------------------------*/
 /*  Task                                                                    */
@@ -46,6 +51,7 @@ ER rsm_tsk(ID);
 /* Create */
 typedef unsigned int    FLGPTN;
 typedef struct {
+    ATR     flgatr;
     FLGPTN  iflgptn;
 } T_CFLG;
 ER cre_flg(ID, T_CFLG*);

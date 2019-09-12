@@ -75,6 +75,8 @@ static void UserCyclicHandler(void*);
 static ER CreateOsResources(void)
 {
     T_CFLG cflg;
+    cflg.flgatr = TA_WSGL;
+    cflg.iflgptn = 0;
     cre_flg(FLAG_ID(SEND), &cflg);
 
     T_CMBX cmbx;
