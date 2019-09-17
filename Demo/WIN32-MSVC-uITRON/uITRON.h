@@ -19,6 +19,8 @@ typedef enum {
 #define TA_WSGL         (0x00)
 #define TA_WMUL         (0x02)
 #define TA_CLR          (0x04)
+#define TA_MFIFO        (0x00)
+#define TA_MPRI         (0x02)
 
 /*--------------------------------------------------------------------------*/
 /*  Task                                                                    */
@@ -71,6 +73,8 @@ ER wai_flg(ID, FLGPTN, MODE, FLGPTN*);
 /* Create */
 typedef struct {
     ATR mbxatr;
+    PRI maxmpri;
+    VP  mprihd;
 } T_CMBX;
 ER cre_mbx(ID, T_CMBX*);
 /* Send */

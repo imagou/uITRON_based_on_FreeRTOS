@@ -80,6 +80,7 @@ static ER CreateOsResources(void)
     cre_flg(FLAG_ID(SEND), &cflg);
 
     T_CMBX cmbx;
+    cmbx.mbxatr = TA_TFIFO;
     cre_mbx(MAILBOX_ID(RECV), &cmbx);
 
     T_CCYC ccyc;
