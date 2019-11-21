@@ -11,7 +11,7 @@
 #define __GLOBAL_DEFINITION_USER_DEFINITIONS__
 #include "UserDefinitions.h"
 
-/* ‚â‚Ş‚È‚­FreeRTOS I/F‚ğg‚¤ê‡Aè“®‚Å’Ç‰Á */
+/* ã‚„ã‚€ãªãFreeRTOS I/Fã‚’ä½¿ã†å ´åˆã€æ‰‹å‹•ã§è¿½åŠ  */
 void vTaskStartScheduler(void);
 
 /*--------------------------------------------------------------------------*/
@@ -28,32 +28,33 @@ typedef struct {
 static MESSAGE_ENTITY   g_Messages[MESSAGE_SIZE];
 static uint16_t         g_MessageIndex = 0;
 
-/* ƒƒbƒZ[ƒWæ“¾ */
+/* ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸å–å¾— */
 static MESSAGE_ENTITY* GetUserMessage(void) {
     uint16_t index = g_MessageIndex++;
     index %= MESSAGE_SIZE;
     return &(g_Messages[index]);
 }
-/* ‰ğ•ú‚Í‚Ü‚¾—pˆÓ‚µ‚Ä‚¢‚È‚¢ */
+/* è§£æ”¾ã¯ã¾ã ç”¨æ„ã—ã¦ã„ãªã„ */
 
 /*--- Event ---*/
-#define EVENT_ALL       (0x00FFFFFF)    /* FreeRTOSd—l§ŒÀ‚ÅAÅ‘å‚Å24-bit */
+#define EVENT_ALL       (0x00FFFFFF)    /* FreeRTOSä»•æ§˜åˆ¶é™ã§ã€æœ€å¤§ã§24-bit */
 #define EVENT_CYCLIC    (0x00000001)
 /* Reserved bit1 - bit15 */
 #define EVENT_STOP      (0x00010000)
 #define EVENT_RESTART   (0x00020000)
+#define EVENT_DUMMY     (0x00800000)
 
 /*--- Task ---*/
 #define CREATE_TASK(name, act, func) {   \
     T_CTSK ctsk_;   \
     ATR tskatr_ = TA_HLNG;  \
     if (act) tskatr_ |= TA_ACT; \
-    ctsk_.tskatr = tskatr_;                 /* ƒ^ƒXƒN‘®« */ \
-    ctsk_.exinf = NULL;                     /* ƒ^ƒXƒN‹N“®ƒpƒ‰ƒ[ƒ^ */ \
-    ctsk_.task = func;                      /* ƒ^ƒXƒNŠÖ” */ \
-    ctsk_.itskpri = TASK_PRI(name);         /* ƒ^ƒXƒN‚Ì—Dæ“x */   \
-    ctsk_.stksz = sizeof(TASK_STACK(name)); /* ƒ^ƒXƒNƒXƒ^ƒbƒNƒTƒCƒY */   \
-    ctsk_.stk = TASK_STACK(name);           /* ƒ^ƒXƒNƒXƒ^ƒbƒNiÃ“I‚ÉŠm•Û‚µ‚Ä‚¨‚­•K—v‚ ‚èj */    \
+    ctsk_.tskatr = tskatr_;                 /* ã‚¿ã‚¹ã‚¯å±æ€§ */ \
+    ctsk_.exinf = NULL;                     /* ã‚¿ã‚¹ã‚¯èµ·å‹•æ™‚ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ */ \
+    ctsk_.task = func;                      /* ã‚¿ã‚¹ã‚¯é–¢æ•° */ \
+    ctsk_.itskpri = TASK_PRI(name);         /* ã‚¿ã‚¹ã‚¯ã®å„ªå…ˆåº¦ */   \
+    ctsk_.stksz = sizeof(TASK_STACK(name)); /* ã‚¿ã‚¹ã‚¯ã‚¹ã‚¿ãƒƒã‚¯ã‚µã‚¤ã‚º */   \
+    ctsk_.stk = TASK_STACK(name);           /* ã‚¿ã‚¹ã‚¯ã‚¹ã‚¿ãƒƒã‚¯ï¼ˆé™çš„ã«ç¢ºä¿ã—ã¦ãŠãå¿…è¦ã‚ã‚Šï¼‰ */    \
     cre_tsk(TASK_ID(name), &ctsk_); \
 }
 
@@ -83,6 +84,10 @@ static ER CreateOsResources(void)
     cmbx.mbxatr = TA_TFIFO;
     cre_mbx(MAILBOX_ID(RECV), &cmbx);
 
+    T_CMTX cmtx;
+    cmtx.mtxatr = TA_TFIFO;
+    cre_mtx(MTX_ID(RECV), &cmtx);
+
     T_CCYC ccyc;
     ccyc.cychdr = UserCyclicHandler;
     ccyc.cyctim = 1000;
@@ -107,12 +112,14 @@ static void PrintUsage()
 {
     DEBUG_PRINT("");
     DEBUG_PRINT("uTITRON (based on FreeRTOS) Demo Program");
-    DEBUG_PRINT("   1 - 15‚Ì”’l    :   ”’lƒƒbƒZ[ƒW‚Ì‘—óM");
-    DEBUG_PRINT("   stop            :   óMƒ^ƒXƒN‚Ìˆê’â~");
-    DEBUG_PRINT("   start           :   óMƒ^ƒXƒN‚ÌÄŠJ");
-    DEBUG_PRINT("   cyclic          :   üŠúƒnƒ“ƒhƒ‰‚ÌŠJn/’â~i‰Šúó‘Ô‚Í’â~j");
-    DEBUG_PRINT("   exit            :   ƒfƒ‚‚ÌI—¹");
-    DEBUG_PRINT("   help            :   ‚±‚ÌƒƒbƒZ[ƒW‚ğ•\¦");
+    DEBUG_PRINT("   1 - 15ã®æ•°å€¤    :   æ•°å€¤ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã®é€å—ä¿¡");
+    DEBUG_PRINT("   stop            :   å—ä¿¡ã‚¿ã‚¹ã‚¯ã®ä¸€æ™‚åœæ­¢");
+    DEBUG_PRINT("   start           :   å—ä¿¡ã‚¿ã‚¹ã‚¯ã®å†é–‹");
+    DEBUG_PRINT("   lock            :   å—ä¿¡ã‚¿ã‚¹ã‚¯ã®ãƒ­ãƒƒã‚¯");
+    DEBUG_PRINT("   unlock          :   å—ä¿¡ã‚¿ã‚¹ã‚¯ã®ã‚¢ãƒ³ãƒ­ãƒƒã‚¯");
+    DEBUG_PRINT("   cyclic          :   å‘¨æœŸãƒãƒ³ãƒ‰ãƒ©ã®é–‹å§‹/åœæ­¢ï¼ˆåˆæœŸçŠ¶æ…‹ã¯åœæ­¢ï¼‰");
+    DEBUG_PRINT("   exit            :   ãƒ‡ãƒ¢ã®çµ‚äº†");
+    DEBUG_PRINT("   help            :   ã“ã®ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚’è¡¨ç¤º");
     DEBUG_PRINT("");
     DEBUG_PRINT("");
 }
@@ -126,11 +133,11 @@ int main(void)
     CreateOsResources();
     CreateOsTasks();
 
-    /* ƒXƒPƒWƒ…[ƒŠƒ“ƒOŠJn */
-    /* ‘Î‰‚·‚éuITRONƒT[ƒrƒXƒR[ƒ‹‚Í‚È‚¢EEE */
+    /* ã‚¹ã‚±ã‚¸ãƒ¥ãƒ¼ãƒªãƒ³ã‚°é–‹å§‹ */
+    /* å¯¾å¿œã™ã‚‹uITRONã‚µãƒ¼ãƒ“ã‚¹ã‚³ãƒ¼ãƒ«ã¯ãªã„ãƒ»ãƒ»ãƒ» */
     vTaskStartScheduler();
 
-    /* ‚±‚±‚É‚Í—ˆ‚È‚¢‚Í‚¸ */
+    /* ã“ã“ã«ã¯æ¥ãªã„ã¯ãš */
 
     return 0;
 }
@@ -142,14 +149,23 @@ static void SendTask(void* params)
     /* Just to remove compiler warning. */
     (void)params;
 
-    /* ƒ^ƒCƒ}ƒ^ƒXƒN‚Í’x‰„‹N“® */
-    /* sta_tsk()‚ğg‚¢‚½‚¢‚ª‚½‚ß‚¾‚¯‚É‚±‚¤‚µ‚Ä‚¢‚é */
+    /* ã‚¿ã‚¤ãƒã‚¿ã‚¹ã‚¯ã¯é…å»¶èµ·å‹• */
+    /* sta_tsk()ã‚’ä½¿ã„ãŸã„ãŒãŸã‚ã ã‘ã«ã“ã†ã—ã¦ã„ã‚‹ */
     sta_tsk(TASK_ID(TIMER), NULL);
 
     while (1) {
+        int32_t num = 0;
+        MESSAGE_ENTITY* ent = NULL;
+
         FLGPTN flgptn;
         wai_flg(FLAG_ID(SEND), EVENT_ALL, TWF_ORW, &flgptn);
         DEBUG_PRINT("[%s]: RECV EVENT (%08X)", __func__, flgptn);
+
+        /* Dummy Event */
+        if (flgptn & EVENT_DUMMY) {
+            num = -1;
+            goto send_message;
+        }
 
         /* Suspend Task */
         if (flgptn & EVENT_STOP) {
@@ -169,13 +185,12 @@ static void SendTask(void* params)
             continue;
         }
 
-        MESSAGE_ENTITY* ent;
-        ent = GetUserMessage();
         /* Numeric Event */
-        /* ƒƒbƒZ[ƒWID‚ÍƒCƒxƒ“ƒg‚ği”’l‚É–ß‚µ‚Äjİ’è */
-        /* ƒpƒ‰ƒ[ƒ^‚ÉƒJƒEƒ“ƒ^‚ğ“n‚· */
-        int32_t num = 0;
+        /* ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸IDã¯ã‚¤ãƒ™ãƒ³ãƒˆã‚’ï¼ˆæ•°å€¤ã«æˆ»ã—ã¦ï¼‰è¨­å®š */
+        /* ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã«ã‚«ã‚¦ãƒ³ã‚¿ã‚’æ¸¡ã™ */
         for (num = 0; !((flgptn >> num) & 1) ; num++) ;
+send_message:
+        ent = GetUserMessage();
         ent->id = (ID)num;
         ent->params[0] = ++count;
 
@@ -192,7 +207,12 @@ static void RecvTask(void* params)
         T_MSG *msg;
         rcv_mbx(MAILBOX_ID(RECV), &msg);
         MESSAGE_ENTITY* ent = (MESSAGE_ENTITY*)(msg);
-        DEBUG_PRINT("[%s]: RECV MESSAGE (%d,%d)", __func__, ent->id, ent->params[0]);
+        /* æœ‰åŠ¹IDã®ã¿å‡ºåŠ›å¯¾è±¡ */
+        if (0 <= ent->id) DEBUG_PRINT("[%s]: RECV MESSAGE (%d,%d)", __func__, ent->id, ent->params[0]);
+
+        /* Lock/Unlock Mutex */
+        loc_mtx(MTX_ID(RECV));
+        unl_mtx(MTX_ID(RECV));
     }
 }
 
@@ -217,8 +237,8 @@ static void CommandTask(void* params)
 
     while (1) {
 
-        /* gets_s()‚Å‰üs“ü—Í‚Ü‚ÅƒuƒƒbƒN‚µ‚Ä‚µ‚Ü‚¤‚ªA‚±‚ê‚ÍRTOS‚Ì‚¨ì–@‚É”½‚µ‚Ä‚¢‚éB */
-        /* i–{—ˆ‚ÍƒCƒxƒ“ƒg‘Ò‚¿‚È‚èAƒƒbƒZ[ƒW‘Ò‚¿‚È‚è‚ÌƒT[ƒrƒXƒR[ƒ‹‚ğŒÄ‚Ô‚×‚«‚Å‚ ‚ë‚¤j */
+        /* gets_s()ã§æ”¹è¡Œå…¥åŠ›ã¾ã§ãƒ–ãƒ­ãƒƒã‚¯ã—ã¦ã—ã¾ã†ãŒã€ã“ã‚Œã¯RTOSã®ãŠä½œæ³•ã«åã—ã¦ã„ã‚‹ã€‚ */
+        /* ï¼ˆæœ¬æ¥ã¯ã‚¤ãƒ™ãƒ³ãƒˆå¾…ã¡ãªã‚Šã€ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸å¾…ã¡ãªã‚Šã®ã‚µãƒ¼ãƒ“ã‚¹ã‚³ãƒ¼ãƒ«ã‚’å‘¼ã¶ã¹ãã§ã‚ã‚ã†ï¼‰ */
         gets_s(str, sizeof(str));
 
         /* Command Parser */
@@ -236,6 +256,18 @@ static void CommandTask(void* params)
         else if (EQUALS_(start)) {
             set_flg(FLAG_ID(SEND), EVENT_RESTART);
         }
+        /* Lock */
+        else if (EQUALS_(lock)) {
+            /* å¤šé‡ãƒ­ãƒƒã‚¯ã‚’é¿ã‘ã‚‹ãŸã‚ãƒãƒ¼ãƒªãƒ³ã‚°ã¨ã™ã‚‹ã€‚ */
+            if (ploc_mtx(MTX_ID(RECV)) == E_OK) {
+                /* ãƒ€ãƒŸãƒ¼ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚’æŠ•ã’ã€ãƒ­ãƒƒã‚¯å¾…ã¡ã«é·ç§»ã•ã›ã‚‹ã€‚ */
+                set_flg(FLAG_ID(SEND), EVENT_DUMMY);
+            }
+        }
+        /* Unlock */
+        else if (EQUALS_(unlock)) {
+            unl_mtx(MTX_ID(RECV));
+        }
         /* Cyclic */
         else if (EQUALS_(cyclic)) {
             T_RCYC rcyc;
@@ -251,7 +283,7 @@ static void CommandTask(void* params)
         }
         /* Exit */
         else if (EQUALS_(exit)) {
-            /* ‹­§I—¹ */
+            /* å¼·åˆ¶çµ‚äº† */
             exit(1);
         }
 #undef EQUALS_

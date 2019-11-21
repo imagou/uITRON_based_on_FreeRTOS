@@ -19,9 +19,9 @@ enum {
     TASK_ID(TIMER),
     TASK_ID(COMMAND),
 
-/* �����܂Ń��[�U�[��` */
-/* �C���f�b�N�X�Ƃ��Ă��g�p����̂ŁA0����̘A���l�Ƃ��Ē�`���邱�� */
-/* �܂��A�ȉ��͏����Ȃ����� */
+/* ここまでユーザー定義 */
+/* インデックスとしても使用するので、0からの連続値として定義すること */
+/* また、以下は消さないこと */
     TASK_ID(MAX),
 };
 
@@ -53,7 +53,7 @@ EXTERN unsigned char    TASK_STACK(COMMAND)[1024];
 enum {
     FLAG_ID(SEND),
 
-/* Task ID�Ɠ��l */
+/* Task IDと同様 */
     FLAG_ID(MAX),
 };
 
@@ -64,8 +64,19 @@ enum {
 enum {
     MAILBOX_ID(RECV),
 
-    /* Task ID�Ɠ��l */
+    /* Task IDと同様 */
     MAILBOX_ID(MAX),
+};
+
+/*--- Mutex ---*/
+/* Common */
+#define MTX_ID(x)   MTX_ID_ ## x
+/* Mutex ID */
+enum {
+    MTX_ID(RECV),
+
+    /* Task IDと同様 */
+    MTX_ID(MAX),
 };
 
 /*--- Cyclic Handler ---*/
@@ -75,7 +86,7 @@ enum {
 enum {
     CYCLIC_ID(USER),
 
-    /* Task ID�Ɠ��l */
+    /* Task IDと同様 */
     CYCLIC_ID(MAX),
 };
 

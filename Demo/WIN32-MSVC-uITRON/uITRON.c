@@ -4,10 +4,11 @@
 #include "FreeRTOS.h"
 #include "event_groups.h"
 #include "queue.h"
+#include "semphr.h"
 #include "timers.h"
 
 #include "uITRON.h"
-/* XXX_ID_MAXÇéQè∆Ç∑ÇÈÇΩÇﬂÇæÇØÇ…include */
+/* XXX_ID_MAX„ÇíÂèÇÁÖß„Åô„Çã„Åü„ÇÅ„Å†„Åë„Å´include */
 #include "UserDefinitions.h"
 
 /*--------------------------------------------------------------------------*/
@@ -18,6 +19,7 @@
 #define CHECK_ID_TASK_(id)      CHECK_ID_(TASK, id)
 #define CHECK_ID_FLAG_(id)      CHECK_ID_(FLAG, id)
 #define CHECK_ID_MAILBOX_(id)   CHECK_ID_(MAILBOX, id)
+#define CHECK_ID_MTX_(id)       CHECK_ID_(MTX, id)
 #define CHECK_ID_CYCLIC_(id)    CHECK_ID_(CYCLIC, id)
 /* Mail Box */
 #define QUEUE_LENGTH    10
@@ -37,6 +39,9 @@ static StaticEventGroup_t   g_FlagGroups[FLAG_ID_MAX];
 static QueueHandle_t        g_MailBoxHandles[MAILBOX_ID_MAX];
 static StaticQueue_t        g_MailBoxQueues[MAILBOX_ID_MAX];
 static uint8_t              g_MailBoxQueueStorageArea[MAILBOX_ID_MAX][QUEUE_LENGTH * ITEM_SIZE];
+/* Mutex */
+static SemaphoreHandle_t    g_MutexHandles[MTX_ID_MAX];
+static StaticSemaphore_t    g_MutexSemaphores[MTX_ID_MAX];
 /* Cyclic Handler */
 static TimerHandle_t        g_CyclicHandles[CYCLIC_ID_MAX];
 static FP                   g_CyclicFunctions[CYCLIC_ID_MAX];
@@ -52,12 +57,12 @@ ER cre_tsk(ID tskid, T_CTSK* pk_ctsk)
 
     g_TaskHandles[tskid] = xTaskCreateStatic(
         pk_ctsk->task, "Task",
-        /* Ç±Ç±ÇÕStackType_tå^îzóÒÇÃóvëfêîÇä˙ë“ÇµÇƒÇ¢ÇÈ */
-        /* ëŒÇµÇƒÅAstkszÇÕÉoÉCÉgêîÇéwíËÇµÇƒÇ¢ÇÈÇÃÇ≈ÅAsizeof(SizeType_t)Ç≈èúéZÇ∑ÇÈ */
+        /* „Åì„Åì„ÅØStackType_tÂûãÈÖçÂàó„ÅÆË¶ÅÁ¥†Êï∞„ÇíÊúüÂæÖ„Åó„Å¶„ÅÑ„Çã */
+        /* ÂØæ„Åó„Å¶„ÄÅstksz„ÅØ„Éê„Ç§„ÉàÊï∞„ÇíÊåáÂÆö„Åó„Å¶„ÅÑ„Çã„ÅÆ„Åß„ÄÅsizeof(SizeType_t)„ÅßÈô§ÁÆó„Åô„Çã */
         (pk_ctsk->stksz / sizeof(StackType_t)),
         NULL, pk_ctsk->itskpri, pk_ctsk->stk, &(g_TCBs[tskid]));
-    /* Ç‡ÇµTA_ACTÇ™éwíËÇ≥ÇÍÇƒÇ¢Ç»Ç©Ç¡ÇΩÇÁSUSPENDEDÇ∆Ç∑ÇÈ */
-    /* FreeRTOSÇ…ÇÕWAITINGÇÃäTîOÇ™Ç»Ç≥ÇªÇ§ÅEÅEÅE */
+    /* „ÇÇ„ÅóTA_ACT„ÅåÊåáÂÆö„Åï„Çå„Å¶„ÅÑ„Å™„Åã„Å£„Åü„ÇâSUSPENDED„Å®„Åô„Çã */
+    /* FreeRTOS„Å´„ÅØWAITING„ÅÆÊ¶ÇÂøµ„Åå„Å™„Åï„Åù„ÅÜ„Éª„Éª„Éª */
     if (!((pk_ctsk->tskatr) & TA_ACT)) vTaskSuspend(g_TaskHandles[tskid]);
     return E_OK;
 }
@@ -66,7 +71,7 @@ ER sta_tsk(ID tskid, VP_INT stacd)
 {
     CHECK_ID_TASK_(tskid);
     (void)stacd;
-    /* ResumeÇ∆ìØÇ∂ */
+    /* Resume„Å®Âêå„Åò */
     rsm_tsk(tskid);
     return E_OK;
 }
@@ -129,7 +134,7 @@ ER cre_mbx(ID mbxid, T_CMBX* pk_cmbx)
     CHECK_ID_MAILBOX_(mbxid);
     (void)pk_cmbx;
 
-    /* void*å^ÇQUEUE_LENGTHÇæÇØÉLÉÖÅ[ÉCÉìÉOâ¬î\ */
+    /* void*Âûã„ÇíQUEUE_LENGTH„Å†„Åë„Ç≠„É•„Éº„Ç§„É≥„Ç∞ÂèØËÉΩ */
     g_MailBoxHandles[mbxid] = xQueueCreateStatic(QUEUE_LENGTH,
         ITEM_SIZE,
         g_MailBoxQueueStorageArea[mbxid],
@@ -156,6 +161,41 @@ ER rcv_mbx(ID mbxid, T_MSG** ppk_msg)
 
     xQueueReceive(g_MailBoxHandles[0], &(pxRxedMessage), portMAX_DELAY);
     *ppk_msg = pxRxedMessage;
+
+    return E_OK;
+}
+
+ER cre_mtx(ID mtxid, T_CMTX* pk_cmtx)
+{
+    CHECK_ID_MTX_(mtxid);
+    (void)pk_cmtx;
+
+    g_MutexHandles[mtxid] = xSemaphoreCreateMutexStatic(&(g_MutexSemaphores[mtxid]));
+
+    return E_OK;
+}
+
+ER loc_mtx(ID mtxid)
+{
+    CHECK_ID_MTX_(mtxid);
+
+    xSemaphoreTake(g_MutexHandles[mtxid], portMAX_DELAY);
+
+    return E_OK;
+}
+
+ER ploc_mtx(ID mtxid)
+{
+    CHECK_ID_MTX_(mtxid);
+
+    return (xSemaphoreTake(g_MutexHandles[mtxid], 0) ? E_OK : E_TMOUT);
+}
+
+ER unl_mtx(ID mtxid)
+{
+    CHECK_ID_MTX_(mtxid);
+
+    xSemaphoreGive(g_MutexHandles[mtxid]);
 
     return E_OK;
 }

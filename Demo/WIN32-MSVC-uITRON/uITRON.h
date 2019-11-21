@@ -10,6 +10,7 @@ typedef int             RELTIM;
 typedef enum {
     E_OK = 0,
     E_ID,
+    E_TMOUT,
 } ER;
 #define TA_NULL         (0x00)
 #define TA_HLNG         (0x00)
@@ -83,6 +84,19 @@ typedef struct {
 } T_MSG;
 ER snd_mbx(ID, T_MSG*);
 ER rcv_mbx(ID, T_MSG**);
+
+/*--------------------------------------------------------------------------*/
+/*  Mutex                                                                   */
+/*--------------------------------------------------------------------------*/
+/* Create */
+typedef struct {
+    ATR mtxatr;
+    PRI ceilpri;
+} T_CMTX;
+ER cre_mtx(ID, T_CMTX*);
+ER loc_mtx(ID);
+ER ploc_mtx(ID);
+ER unl_mtx(ID);
 
 /*--------------------------------------------------------------------------*/
 /*  Cyclic Handler                                                          */
