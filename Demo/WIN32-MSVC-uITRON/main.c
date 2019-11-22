@@ -66,8 +66,10 @@ static void SendTask(void*);
 static void RecvTask(void*);
 static void TimerTask(void*);
 static void CommandTask(void*);
+static void GetsTask(void*);
 /* Handlers */
 static void UserCyclicHandler(void*);
+static void GetsCyclicHandler(void*);
 
 /*--------------------------------------------------------------------------*/
 /*  Static Functions                                                        */
@@ -83,6 +85,7 @@ static ER CreateOsResources(void)
     T_CMBX cmbx;
     cmbx.mbxatr = TA_TFIFO;
     cre_mbx(MAILBOX_ID(RECV), &cmbx);
+    cre_mbx(MAILBOX_ID(COMMAND), &cmbx);
 
     T_CMTX cmtx;
     cmtx.mtxatr = TA_TFIFO;
@@ -92,6 +95,9 @@ static ER CreateOsResources(void)
     ccyc.cychdr = UserCyclicHandler;
     ccyc.cyctim = 1000;
     cre_cyc(CYCLIC_ID(USER), &ccyc);
+    ccyc.cychdr = GetsCyclicHandler;
+    ccyc.cyctim = 10;
+    cre_cyc(CYCLIC_ID(GETS), &ccyc);
 
     return E_OK;
 }
@@ -104,6 +110,7 @@ static ER CreateOsTasks(void)
     CREATE_TASK(TIMER, FALSE, TimerTask);
 
     CREATE_TASK(COMMAND, TRUE, CommandTask);
+    CREATE_TASK(GETS, TRUE, GetsTask);
 
     return E_OK;
 }
@@ -236,10 +243,13 @@ static void CommandTask(void* params)
     (void)params;
 
     while (1) {
-
-        /* gets_s()で改行入力までブロックしてしまうが、これはRTOSのお作法に反している。 */
-        /* （本来はイベント待ちなり、メッセージ待ちなりのサービスコールを呼ぶべきであろう） */
-        gets_s(str, sizeof(str));
+        T_MSG* msg;
+        rcv_mbx(MAILBOX_ID(COMMAND), &msg);
+        MESSAGE_ENTITY* ent = (MESSAGE_ENTITY*)(msg);
+        /* Timeout */
+        if (!(ent->params[0])) continue;
+        /* Get String */
+        strcpy_s(str, sizeof(str), (const char *)(ent->params[0]));
 
         /* Command Parser */
         int32_t num = atol(str);
@@ -290,6 +300,27 @@ static void CommandTask(void* params)
     }
 }
 
+static void GetsTask(void* params)
+{
+    static char str[256];
+
+    /* Just to remove compiler warning. */
+    (void)params;
+
+    while (1) {
+        stp_cyc(CYCLIC_ID(GETS));
+        sta_cyc(CYCLIC_ID(GETS));
+
+        /* gets_s()で改行入力までブロックしてしまうが、これはRTOSのお作法に反している。 */
+        /* このため、周期ハンドラを用い、タイムアウトを強引に検知している。 */
+        gets_s(str, sizeof(str));
+
+        MESSAGE_ENTITY* ent = GetUserMessage();
+        ent->params[0] = (uint32_t)str;
+        snd_mbx(MAILBOX_ID(COMMAND), (T_MSG*)ent);
+    }
+}
+
 /*--------------------------------------------------------------------------*/
 /*  Handlers                                                                */
 /*--------------------------------------------------------------------------*/
@@ -300,4 +331,14 @@ static void UserCyclicHandler(void* params)
     (void)params;
 
     iset_flg(FLAG_ID(SEND), EVENT_CYCLIC);
+}
+
+static void GetsCyclicHandler(void* params)
+{
+    /* Just to remove compiler warning. */
+    (void)params;
+
+    MESSAGE_ENTITY* ent = GetUserMessage();
+    ent->params[0] = (uint32_t)NULL;
+    snd_mbx(MAILBOX_ID(COMMAND), (T_MSG*)ent);
 }

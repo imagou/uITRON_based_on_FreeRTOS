@@ -21,6 +21,7 @@
 #define CHECK_ID_MAILBOX_(id)   CHECK_ID_(MAILBOX, id)
 #define CHECK_ID_MTX_(id)       CHECK_ID_(MTX, id)
 #define CHECK_ID_CYCLIC_(id)    CHECK_ID_(CYCLIC, id)
+#define CHECK_ID_ALARM_(id)     CHECK_ID_(ALARM, id)
 /* Mail Box */
 #define QUEUE_LENGTH    10
 #define ITEM_SIZE       sizeof(void*)
@@ -46,6 +47,10 @@ static StaticSemaphore_t    g_MutexSemaphores[MTX_ID_MAX];
 static TimerHandle_t        g_CyclicHandles[CYCLIC_ID_MAX];
 static FP                   g_CyclicFunctions[CYCLIC_ID_MAX];
 static StaticTimer_t        g_CyclicBuffers[CYCLIC_ID_MAX];
+/* Cyclic Handler */
+static TimerHandle_t        g_AlarmHandles[ALARM_ID_MAX];
+static FP                   g_AlarmFunctions[ALARM_ID_MAX];
+static StaticTimer_t        g_AlarmBuffers[ALARM_ID_MAX];
 
 /*--------------------------------------------------------------------------*/
 /*  APIs                                                                    */
@@ -159,7 +164,7 @@ ER rcv_mbx(ID mbxid, T_MSG** ppk_msg)
 
     T_MSG* pxRxedMessage;
 
-    xQueueReceive(g_MailBoxHandles[0], &(pxRxedMessage), portMAX_DELAY);
+    xQueueReceive(g_MailBoxHandles[mbxid], &(pxRxedMessage), portMAX_DELAY);
     *ppk_msg = pxRxedMessage;
 
     return E_OK;
@@ -202,9 +207,17 @@ ER unl_mtx(ID mtxid)
 
 void vTimerCallback(TimerHandle_t xTimer)
 {
+    /* Cyclic */
     for (int i = 0; i < CYCLIC_ID_MAX; i++) {
         if (xTimer == g_CyclicHandles[i]) {
             g_CyclicFunctions[i](NULL);
+            break;
+        }
+    }
+    /* Alarm */
+    for (int i = 0; i < ALARM_ID_MAX; i++) {
+        if (xTimer == g_AlarmHandles[i]) {
+            g_AlarmFunctions[i](NULL);
             break;
         }
     }
@@ -238,5 +251,30 @@ ER ref_cyc(ID cycid, T_RCYC* pk_rcyc)
 {
     CHECK_ID_CYCLIC_(cycid);
     pk_rcyc->cycstat = (STAT)(xTimerIsTimerActive(g_CyclicHandles[cycid]));
+    return E_OK;
+}
+
+ER cre_alm(ID almid, T_CALM* pk_calm)
+{
+    CHECK_ID_ALARM_(almid);
+    g_AlarmFunctions[almid] = pk_calm->almhdr;
+    g_AlarmHandles[almid] = xTimerCreateStatic("Alarm",
+        10 /* Temporary */, pdFALSE, (void*)0, vTimerCallback, &(g_AlarmBuffers[almid]));
+
+    return E_OK;
+}
+
+ER sta_alm(ID almid, RELTIM almtim)
+{
+    CHECK_ID_ALARM_(almid);
+    xTimerChangePeriod(g_AlarmHandles[almid], almtim, 0);
+    xTimerStart(g_AlarmHandles[almid], 0);
+    return E_OK;
+}
+
+ER stp_alm(ID almid)
+{
+    CHECK_ID_ALARM_(almid);
+    xTimerStop(g_AlarmHandles[almid], 0);
     return E_OK;
 }

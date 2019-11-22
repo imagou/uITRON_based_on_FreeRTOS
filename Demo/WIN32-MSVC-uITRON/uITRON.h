@@ -78,7 +78,7 @@ typedef struct {
     VP  mprihd;
 } T_CMBX;
 ER cre_mbx(ID, T_CMBX*);
-/* Send */
+/* Send/Receive */
 typedef struct {
     void* msgqueue;   /* Message Queue Address */
 } T_MSG;
@@ -94,6 +94,7 @@ typedef struct {
     PRI ceilpri;
 } T_CMTX;
 ER cre_mtx(ID, T_CMTX*);
+/* Lock/Unlock */
 ER loc_mtx(ID);
 ER ploc_mtx(ID);
 ER unl_mtx(ID);
@@ -108,9 +109,8 @@ typedef struct {
     RELTIM  cyctim;
 } T_CCYC;
 ER cre_cyc(ID, T_CCYC*);
-/* Start */
+/* Start/Stop */
 ER sta_cyc(ID);
-/* Stop */
 ER stp_cyc(ID);
 /* Refer */
 typedef int     STAT;
@@ -118,3 +118,17 @@ typedef struct {
     STAT    cycstat;
 } T_RCYC;
 ER ref_cyc(ID, T_RCYC*);
+
+/*--------------------------------------------------------------------------*/
+/*  Alarm Handler                                                           */
+/*--------------------------------------------------------------------------*/
+/* Create */
+typedef struct {
+    ATR     almatr;
+    VP_INT  exinf;
+    FP      almhdr;
+} T_CALM;
+ER cre_alm(ID, T_CALM*);
+/* Start/Stop */
+ER sta_alm(ID, RELTIM);
+ER stp_alm(ID);

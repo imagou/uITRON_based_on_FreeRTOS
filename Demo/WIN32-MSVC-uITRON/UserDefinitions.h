@@ -18,6 +18,7 @@ enum {
     TASK_ID(RECV),
     TASK_ID(TIMER),
     TASK_ID(COMMAND),
+    TASK_ID(GETS),
 
 /* ここまでユーザー定義 */
 /* インデックスとしても使用するので、0からの連続値として定義すること */
@@ -35,6 +36,7 @@ enum {
     TASK_PRI(RECV)      = TASK_PRI_MIDDLE,
     TASK_PRI(TIMER)     = TASK_PRI_LOW,
     TASK_PRI(COMMAND)   = TASK_PRI_LOW,
+    TASK_PRI(GETS)      = TASK_PRI_LOW,
 };
 
 /* Task Stack */
@@ -43,6 +45,7 @@ EXTERN unsigned char    TASK_STACK(SEND)[1024];
 EXTERN unsigned char    TASK_STACK(RECV)[1024];
 EXTERN unsigned char    TASK_STACK(TIMER)[512];
 EXTERN unsigned char    TASK_STACK(COMMAND)[1024];
+EXTERN unsigned char    TASK_STACK(GETS)[512];
 
 /*--------------------------------------------------------------------------*/
 /*  Resources                                                               */
@@ -63,6 +66,7 @@ enum {
 /* Mail Box ID */
 enum {
     MAILBOX_ID(RECV),
+    MAILBOX_ID(COMMAND),
 
     /* Task IDと同様 */
     MAILBOX_ID(MAX),
@@ -85,9 +89,21 @@ enum {
 /* Cyclic ID */
 enum {
     CYCLIC_ID(USER),
+    CYCLIC_ID(GETS),
 
     /* Task IDと同様 */
     CYCLIC_ID(MAX),
+};
+
+/*--- Alarm Handler ---*/
+/* Common */
+#define ALARM_ID(x)     ALARM_ID_ ## x
+/* Alarm ID */
+enum {
+    ALARM_ID(UNUSED),
+
+    /* Task IDと同様 */
+    ALARM_ID(MAX),
 };
 
 /*--------------------------------------------------------------------------*/
