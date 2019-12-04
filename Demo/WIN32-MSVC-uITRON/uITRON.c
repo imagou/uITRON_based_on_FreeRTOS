@@ -225,12 +225,16 @@ void vTimerCallback(TimerHandle_t xTimer)
 
 ER cre_cyc(ID cycid, T_CCYC* pk_ccyc)
 {
+    ER ercd = E_OK;
     CHECK_ID_CYCLIC_(cycid);
     g_CyclicFunctions[cycid] = pk_ccyc->cychdr;
     g_CyclicHandles[cycid] = xTimerCreateStatic("Cyclic",
         pk_ccyc->cyctim, pdTRUE, (void*)0, vTimerCallback, &(g_CyclicBuffers[cycid]));
+    if ((pk_ccyc->cycatr) & TA_STA) {
+        ercd = sta_cyc(cycid);
+    }
 
-    return E_OK;
+    return ercd;
 }
 
 ER sta_cyc(ID cycid)

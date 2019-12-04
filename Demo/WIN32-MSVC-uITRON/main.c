@@ -92,8 +92,10 @@ static ER CreateOsResources(void)
     cre_mtx(MTX_ID(RECV), &cmtx);
 
     T_CCYC ccyc;
+    ccyc.cycatr = TA_HLNG;
     ccyc.cychdr = UserCyclicHandler;
     ccyc.cyctim = 1000;
+    ccyc.cycphs = 0;
     cre_cyc(CYCLIC_ID(USER), &ccyc);
     ccyc.cychdr = GetsCyclicHandler;
     ccyc.cyctim = 10;

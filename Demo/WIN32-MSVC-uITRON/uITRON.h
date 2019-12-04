@@ -14,6 +14,7 @@ typedef enum {
 } ER;
 #define TA_NULL         (0x00)
 #define TA_HLNG         (0x00)
+#define TA_ASM          (0x01)
 #define TA_ACT          (0x02)
 #define TA_TFIFO        (0x00)
 #define TA_TPRI         (0x01)
@@ -22,6 +23,8 @@ typedef enum {
 #define TA_CLR          (0x04)
 #define TA_MFIFO        (0x00)
 #define TA_MPRI         (0x02)
+#define TA_STA          (0x02)
+#define TA_PHS          (0x04)
 
 /*--------------------------------------------------------------------------*/
 /*  Task                                                                    */
@@ -107,6 +110,7 @@ typedef struct {
     ATR     cycatr;
     FP      cychdr;
     RELTIM  cyctim;
+    RELTIM  cycphs;
 } T_CCYC;
 ER cre_cyc(ID, T_CCYC*);
 /* Start/Stop */
