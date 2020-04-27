@@ -367,6 +367,7 @@ CONTEXT xContext;
 
 	xPortRunning = pdTRUE;
 
+	int last_msec = -1;
 	for(;;)
 	{
 		WaitForMultipleObjects( sizeof( pvObjectList ) / sizeof( void * ), pvObjectList, TRUE, INFINITE );
@@ -389,6 +390,25 @@ CONTEXT xContext;
 					if( ulIsrHandler[ i ]() != pdFALSE )
 					{
 						ulSwitchRequired |= ( 1 << i );
+					}
+					// Adjust Ticks.
+					if (i == portINTERRUPT_TICK) {
+						SYSTEMTIME t;
+						GetLocalTime(&t);
+						int curr_msec = (t.wSecond * 1000) + t.wMilliseconds;
+						if (last_msec < 0) last_msec = curr_msec;
+						else {
+							if (last_msec > curr_msec) curr_msec += (60 * 1000);
+							// 2 msec or more.
+							for (int count = 1; count < (curr_msec - last_msec); count++) {
+								/* Run the actual handler. */
+								if (ulIsrHandler[i]() != pdFALSE)
+								{
+									ulSwitchRequired |= (1 << i);
+								}
+							}
+							last_msec = curr_msec;
+						}
 					}
 				}
 

@@ -119,18 +119,18 @@ static ER CreateOsTasks(void)
 
 static void PrintUsage()
 {
-    DEBUG_PRINT("");
-    DEBUG_PRINT("uTITRON (based on FreeRTOS) Demo Program");
-    DEBUG_PRINT("   1 - 15の数値    :   数値メッセージの送受信");
-    DEBUG_PRINT("   stop            :   受信タスクの一時停止");
-    DEBUG_PRINT("   start           :   受信タスクの再開");
-    DEBUG_PRINT("   lock            :   受信タスクのロック");
-    DEBUG_PRINT("   unlock          :   受信タスクのアンロック");
-    DEBUG_PRINT("   cyclic          :   周期ハンドラの開始/停止（初期状態は停止）");
-    DEBUG_PRINT("   exit            :   デモの終了");
-    DEBUG_PRINT("   help            :   このメッセージを表示");
-    DEBUG_PRINT("");
-    DEBUG_PRINT("");
+    DEBUG_PRINT_NOTIME("");
+    DEBUG_PRINT_NOTIME("uTITRON (based on FreeRTOS) Demo Program");
+    DEBUG_PRINT_NOTIME("   1 - 15の数値    :   数値メッセージの送受信");
+    DEBUG_PRINT_NOTIME("   stop            :   受信タスクの一時停止");
+    DEBUG_PRINT_NOTIME("   start           :   受信タスクの再開");
+    DEBUG_PRINT_NOTIME("   lock            :   受信タスクのロック");
+    DEBUG_PRINT_NOTIME("   unlock          :   受信タスクのアンロック");
+    DEBUG_PRINT_NOTIME("   cyclic          :   周期ハンドラの開始/停止（初期状態は停止）");
+    DEBUG_PRINT_NOTIME("   exit            :   デモの終了");
+    DEBUG_PRINT_NOTIME("   help            :   このメッセージを表示");
+    DEBUG_PRINT_NOTIME("");
+    DEBUG_PRINT_NOTIME("");
 }
 
 /*--------------------------------------------------------------------------*/

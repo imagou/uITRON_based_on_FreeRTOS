@@ -109,4 +109,19 @@ enum {
 /*--------------------------------------------------------------------------*/
 /*  For Debug                                                               */
 /*--------------------------------------------------------------------------*/
-#define DEBUG_PRINT(fmt, ...)    printf(fmt "\r\n", __VA_ARGS__)
+// Windows Only...
+#include <Windows.h>
+#include <stdio.h>
+inline char* get_time_string(char* buf) {
+    SYSTEMTIME t;
+    GetLocalTime(&t);
+    sprintf(buf, "%04d/%02d/%02d %02d:%02d:%02d.%03d",
+        t.wYear, t.wMonth, t.wDay,
+        t.wHour, t.wMinute, t.wSecond, t.wMilliseconds);
+    return buf;
+}
+#define DEBUG_PRINT(fmt, ...)    { \
+    char buf_[32]; \
+    printf("[%s] " fmt "\r\n", get_time_string(buf_), __VA_ARGS__); \
+}
+#define DEBUG_PRINT_NOTIME(fmt, ...)    printf(fmt "\r\n", __VA_ARGS__)
