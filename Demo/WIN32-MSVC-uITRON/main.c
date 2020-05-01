@@ -70,6 +70,7 @@ static void GetsTask(void*);
 /* Handlers */
 static void UserCyclicHandler(void*);
 static void GetsCyclicHandler(void*);
+static void UserAlarmHandler(void*);
 
 /*--------------------------------------------------------------------------*/
 /*  Static Functions                                                        */
@@ -101,6 +102,11 @@ static ER CreateOsResources(void)
     ccyc.cyctim = 10;
     cre_cyc(CYCLIC_ID(GETS), &ccyc);
 
+    T_CALM calm;
+    calm.almatr = TA_HLNG;
+    calm.almhdr = UserAlarmHandler;
+    cre_alm(ALARM_ID(USER), &calm);
+
     return E_OK;
 }
 
@@ -127,6 +133,7 @@ static void PrintUsage()
     DEBUG_PRINT_NOTIME("   lock            :   受信タスクのロック");
     DEBUG_PRINT_NOTIME("   unlock          :   受信タスクのアンロック");
     DEBUG_PRINT_NOTIME("   cyclic          :   周期ハンドラの開始/停止（初期状態は停止）");
+    DEBUG_PRINT_NOTIME("   alarm           :   アラームハンドラの開始/停止（初期状態は停止）");
     DEBUG_PRINT_NOTIME("   exit            :   デモの終了");
     DEBUG_PRINT_NOTIME("   help            :   このメッセージを表示");
     DEBUG_PRINT_NOTIME("");
@@ -287,6 +294,13 @@ static void CommandTask(void* params)
             if (!(rcyc.cycstat))    sta_cyc(CYCLIC_ID(USER));
             else                    stp_cyc(CYCLIC_ID(USER));
         }
+        /* Alarm */
+        else if (EQUALS_(alarm)) {
+            T_RALM ralm;
+            ref_alm(ALARM_ID(USER), &ralm);
+            if (!(ralm.almstat))    sta_alm(ALARM_ID(USER), 5000);
+            else                    stp_alm(ALARM_ID(USER));
+        }
         /* Print Usage */
         else if (EQUALS_(help)) {
             sus_tsk(TASK_ID(TIMER));
@@ -343,4 +357,13 @@ static void GetsCyclicHandler(void* params)
     MESSAGE_ENTITY* ent = GetUserMessage();
     ent->params[0] = (uint32_t)NULL;
     snd_mbx(MAILBOX_ID(COMMAND), (T_MSG*)ent);
+}
+
+static void UserAlarmHandler(void* params)
+{
+    /* Just to remove compiler warning. */
+    (void)params;
+
+    static int32_t expired = 0;
+    DEBUG_PRINT("[%s]: Alarm Timer Expired (%d)", __func__, ++expired);
 }

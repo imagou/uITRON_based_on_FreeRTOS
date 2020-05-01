@@ -282,3 +282,10 @@ ER stp_alm(ID almid)
     xTimerStop(g_AlarmHandles[almid], 0);
     return E_OK;
 }
+
+ER ref_alm(ID almid, T_RALM* pk_ralm)
+{
+    CHECK_ID_ALARM_(almid);
+    pk_ralm->almstat = (STAT)(xTimerIsTimerActive(g_AlarmHandles[almid]));
+    return E_OK;
+}

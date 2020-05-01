@@ -7,6 +7,7 @@ typedef unsigned int    ATR;
 typedef void*           VP_INT;
 typedef void            (*FP)(void*);
 typedef int             RELTIM;
+typedef int             STAT;
 typedef enum {
     E_OK = 0,
     E_ID,
@@ -117,7 +118,6 @@ ER cre_cyc(ID, T_CCYC*);
 ER sta_cyc(ID);
 ER stp_cyc(ID);
 /* Refer */
-typedef int     STAT;
 typedef struct {
     STAT    cycstat;
 } T_RCYC;
@@ -136,3 +136,8 @@ ER cre_alm(ID, T_CALM*);
 /* Start/Stop */
 ER sta_alm(ID, RELTIM);
 ER stp_alm(ID);
+/* Refer */
+typedef struct {
+    STAT    almstat;
+} T_RALM;
+ER ref_alm(ID, T_RALM*);

@@ -100,7 +100,7 @@ enum {
 #define ALARM_ID(x)     ALARM_ID_ ## x
 /* Alarm ID */
 enum {
-    ALARM_ID(UNUSED),
+    ALARM_ID(USER),
 
     /* Task IDと同様 */
     ALARM_ID(MAX),
